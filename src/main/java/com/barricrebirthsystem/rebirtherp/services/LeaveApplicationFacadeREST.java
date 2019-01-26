@@ -7,14 +7,21 @@
 package com.barricrebirthsystem.rebirtherp.services;
 
 import com.barricrebirthsystem.rebirtherp.entities.Employee;
-import com.barricrebirthsystem.rebirtherp.entities.Expenses;
 import com.barricrebirthsystem.rebirtherp.entities.LeaveApplication;
 import com.barricrebirthsystem.rebirtherp.entities.LeaveApprovals;
+import com.barricrebirthsystem.rebirtherp.entities.LeaveCategory;
 import com.barricrebirthsystem.rebirtherp.util.LeaveAppJsonObject;
 import com.barricrebirthsystem.rebirtherp.util.UtilHelper;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
@@ -49,19 +56,61 @@ public class LeaveApplicationFacadeREST extends AbstractFacade<LeaveApplication>
     //@Override
     @Produces({MediaType.APPLICATION_JSON})
     @Consumes({MediaType.APPLICATION_JSON})
-    public HashMap<String, String> createE(LeaveApplication entity) {
+    public Response createE(LeaveApplication entity) {
+       
+        Map m = new HashMap();
         try {
 
-            long diff = entity.getEndDate().getTime() - entity.getStartDate().getTime();
-            Long days = TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
-            entity.setDurationInDays(days.doubleValue());
+            
+           long diff = entity.getEndDate().getTime() - entity.getStartDate().getTime();
+            Long totalDays = TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
+            System.out.println(totalDays);
+            if(totalDays<=0){
+            m.put("code", -3);
+            m.put("message", "End Date cannot be less than Start Date, Please review your Dates!!! ");
+           return Response.ok(m).build();
+            }
+
+            Double  days = betweenDaysIgnoreWeekends(entity.getStartDate(), entity.getEndDate());
+            
+            entity.setDurationInDays(days);
+               Employee emp = entity.getEmpid();
+            Double daysTaken = 0.0;
+            LeaveCategory leaveCat =em.find(LeaveCategory.class, entity.getLeavecat().getId()) ;
+            //Get all leave of this employee
+            List<LeaveApplication> allLeave = em.createNamedQuery("LeaveApplication.findByEmp", LeaveApplication.class)
+                    .setParameter("empid", emp).getResultList();
+            //filter where category is this category
+            for(LeaveApplication  l: allLeave){
+            if(Objects.equals(leaveCat.getId(), l.getLeavecat().getId())){
+                LeaveApprovals lap = em.find(LeaveApprovals.class, l.getId());
+                        if("APPROVED".equals(lap.getApproval3Status())){
+                        daysTaken = daysTaken + l.getDurationInDays();
+                        }
+            }
+            }
+            
+            Double daysAvai = leaveCat.getDurationInDays() - daysTaken;
+            System.out.println("DaysAvailable "+daysAvai);
+             System.out.println("Taken "+days);
+            if(entity.getDurationInDays()>daysAvai){
+             m.put("code", -2);
+            m.put("message", "Error: Your days remaining in this category is "+daysAvai+" ,you are requesting "+days+" days!(Excludes weekends!), please reduce number of days or contact Hr");
+            }else{
             super.create(entity);
+            m.put("code", 0);
+            m.put("message", "Leave created! ");
+            }
+          
+            
 
         } catch (Exception e) {
-            return UtilHelper.ErrorMessage();
+            e.printStackTrace();
+            m.put("code", -1);
+            m.put("message", "Error occured while creating leave, please contact Admin!!!");
         }
 
-        return UtilHelper.SuccessMessage();
+        return Response.ok(m).build();
     }
 
     @PUT
@@ -149,21 +198,41 @@ public class LeaveApplicationFacadeREST extends AbstractFacade<LeaveApplication>
     @Produces({MediaType.APPLICATION_JSON})
     public LeaveAppJsonObject findLeave(@PathParam("id") Integer id) {
         try {
+            System.out.println("LEAVEID: "+id);
+            LeaveApplication la = em.find(LeaveApplication.class, id);
+            
             LeaveApprovals lv = (LeaveApprovals) em.createNamedQuery("LeaveApprovals.findByLeaveId")
-                    .setParameter("leaveId", new LeaveApplication(id))
+                    .setParameter("leaveId", la)
                     .getSingleResult();
-
-            String sql = "SELECT SUM(la.duration_in_days) as din FROM leave_approvals l  JOIN leave_application la ON(l.leave_id=la.id) "
-                    + " WHERE la.leave_cat =" + lv.getLeaveId().getLeavecat().getId() + " AND l.approval3_status ='APPROVED' group by la.leave_cat ";
-
+            LeaveCategory leaveCat = la.getLeavecat();
+            Employee emp = la.getEmpid();
             Double daysTaken = 0.0;
-
-            try {
-                daysTaken = (Double) em.createNativeQuery(sql).setMaxResults(1).getSingleResult();
-            } catch (Exception e) {
+            //Get all leave of this employee
+            List<LeaveApplication> allLeave = em.createNamedQuery("LeaveApplication.findByEmp", LeaveApplication.class)
+                    .setParameter("empid", emp).getResultList();
+            //filter where category is this category
+            for(LeaveApplication  l: allLeave){
+            if(Objects.equals(leaveCat.getId(), l.getLeavecat().getId())){
+                LeaveApprovals lap = em.find(LeaveApprovals.class, l.getId());
+                        if("APPROVED".equals(lap.getApproval3Status())){
+                        daysTaken = daysTaken + l.getDurationInDays();
+                        }
             }
-            int daysAllowed = lv.getLeaveId().getLeavecat().getDurationInDays();
-            Double daysAvai = daysAllowed - daysTaken;
+            }
+           
+
+//            String sql = "SELECT SUM(la.duration_in_days) as din FROM leave_approvals l  JOIN leave_application la ON(l.leave_id=la.id) "
+//                    + " WHERE la.leave_cat =" + lv.getLeaveId().getLeavecat().getId() + " AND l.approval3_status ='APPROVED' group by la.leave_cat ";
+//
+//            
+//
+//            try {
+//                daysTaken = (Double) em.createNativeQuery(sql).setMaxResults(1).getSingleResult();
+//                System.out.println("Days taken: "+daysTaken);
+//            } catch (Exception e) {
+//            }
+       //     int daysAllowed = lv.getLeaveId().getLeavecat().getDurationInDays();
+            Double daysAvai = leaveCat.getDurationInDays() - daysTaken;
             LeaveAppJsonObject obj = new LeaveAppJsonObject();
             obj.setLeaveApp(lv);
             obj.setDaysTaken(daysTaken.intValue());
@@ -204,5 +273,24 @@ public class LeaveApplicationFacadeREST extends AbstractFacade<LeaveApplication>
         String sql = "SELECT l.* FROM leave_application l join leave_approvals a on (l.id=a.leave_id) WHERE a.approval1_status='APPROVED' ";
         return em.createNativeQuery(sql, LeaveApplication.class).getResultList();
     }
+    
+    
+    public Double betweenDaysIgnoreWeekends(Date date1, Date date2) {
+    
+    Calendar cal1 = Calendar.getInstance();
+    Calendar cal2 = Calendar.getInstance();
+    cal1.setTime(date1);
+    cal2.setTime(date2);
+
+    Double numberOfDays = 0.0;
+    while (cal1.before(cal2)) {
+        if ((Calendar.SATURDAY != cal1.get(Calendar.DAY_OF_WEEK))
+           &&(Calendar.SUNDAY != cal1.get(Calendar.DAY_OF_WEEK))) {
+            numberOfDays++;
+        }
+        cal1.add(Calendar.DATE,1);
+    }
+    return numberOfDays;
+}
 
 }

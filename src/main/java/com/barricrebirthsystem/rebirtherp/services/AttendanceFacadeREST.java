@@ -7,6 +7,7 @@ package com.barricrebirthsystem.rebirtherp.services;
 
 import com.barricrebirthsystem.rebirtherp.entities.Attendance;
 import com.barricrebirthsystem.rebirtherp.entities.Employee;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -92,8 +93,16 @@ public class AttendanceFacadeREST extends AbstractFacade<Attendance> {
     @Path("isclockedin")
     public Boolean isClockedIn() {
         try {
+            Date myDate = new Date();
+            
+
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+
+            // Format the date to Strings
+            String mdy = df.format(myDate);
+            System.out.println(mdy);
             Attendance atten = em.createNamedQuery("Attendance.findByAttendanceDate", Attendance.class)
-                    .setParameter("attendanceDate", new Date()).getSingleResult();
+                    .setParameter("attendanceDate", myDate).getSingleResult();
             return atten != null;
         } catch (Exception e) {
             return false;
@@ -164,28 +173,27 @@ public class AttendanceFacadeREST extends AbstractFacade<Attendance> {
     protected EntityManager getEntityManager() {
         return em;
     }
-    
+
     @POST
     @Path("saveattendance")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON})
-    public Response saveAttendance(Attendance att){
-        System.out.println("Attendance: "+att);
-      List<Attendance> list =  em.createNamedQuery("Attendance.findEmpAndDate").setParameter("attendanceDate", att.getAttendanceDate())
+    public Response saveAttendance(Attendance att) {
+        System.out.println("Attendance: " + att);
+        List<Attendance> list = em.createNamedQuery("Attendance.findEmpAndDate").setParameter("attendanceDate", att.getAttendanceDate())
                 .setParameter("empid", att.getEmployeeId()).getResultList();
-    Map map = new HashMap(); 
-    if(list.isEmpty()){
-      this.em.persist(att);
-      map.put("code", 1);
-        map.put("status", "Success");
-       return Response.ok(map).build();
-      }else{
-        map.put("code", 2);
-         map.put("status", "Attendance already added for this employee");
-       return Response.ok(map).build();
+        Map map = new HashMap();
+        if (list.isEmpty()) {
+            this.em.persist(att);
+            map.put("code", 1);
+            map.put("status", "Success");
+            return Response.ok(map).build();
+        } else {
+            map.put("code", 2);
+            map.put("status", "Attendance already added for this employee");
+            return Response.ok(map).build();
+        }
+
     }
-        
-    }
-    
 
 }

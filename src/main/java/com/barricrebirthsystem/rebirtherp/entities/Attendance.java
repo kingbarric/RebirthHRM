@@ -33,7 +33,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @Table(name = "attendance")
 @XmlRootElement
 @NamedQueries({
-    @NamedQuery(name = "Attendance.findAll", query = "SELECT a FROM Attendance a ORDER BY a.id DESC")
+    @NamedQuery(name = "Attendance.findAll", query = "SELECT a FROM Attendance a ORDER BY a.attendanceDate DESC")
     , @NamedQuery(name = "Attendance.findById", query = "SELECT a FROM Attendance a WHERE a.id = :id")
     , @NamedQuery(name = "Attendance.findByAttendanceDate", query = "SELECT a FROM Attendance a WHERE a.attendanceDate = :attendanceDate")
     , @NamedQuery(name = "Attendance.findByClockIntime", query = "SELECT a FROM Attendance a WHERE a.clockIntime = :clockIntime")
@@ -85,7 +85,7 @@ public class Attendance implements Serializable {
         this.id = id;
     }
 
-    @JsonFormat(shape=JsonFormat.Shape.STRING,pattern="yyyy-MM-dd")
+   // @JsonFormat(shape=JsonFormat.Shape.STRING,pattern="yyyy-MM-dd")
     public Date getAttendanceDate() {
         return attendanceDate;
     }
@@ -94,23 +94,23 @@ public class Attendance implements Serializable {
         this.attendanceDate = attendanceDate;
     }
 
-    @JsonFormat(shape=JsonFormat.Shape.STRING,pattern="HH:mm:ss")
+  //  @JsonFormat(shape=JsonFormat.Shape.STRING,pattern="HH:mm:ss")
     public Date getClockIntime() {
         return clockIntime;
     }
 
-    @JsonFormat(shape=JsonFormat.Shape.STRING,pattern="HH:mm:ss")
+  //  @JsonFormat(shape=JsonFormat.Shape.STRING,pattern="HH:mm:ss")
     public void setClockIntime(Date clockIntime) {
         this.clockIntime = clockIntime;
     }
 
     
-    @JsonFormat(shape=JsonFormat.Shape.STRING,pattern="HH:mm:ss")
+   // @JsonFormat(shape=JsonFormat.Shape.STRING,pattern="HH:mm:ss")
     public Date getClockoutTime() {
         return clockoutTime;
     }
 
-     @JsonFormat(shape=JsonFormat.Shape.STRING,pattern="HH:mm:ss")
+  //   @JsonFormat(shape=JsonFormat.Shape.STRING,pattern="HH:mm:ss")
     public void setClockoutTime(Date clockoutTime) {
         this.clockoutTime = clockoutTime;
     }

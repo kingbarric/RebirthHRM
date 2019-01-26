@@ -108,8 +108,8 @@ public class NotificationFacadeREST extends AbstractFacade<Notification> {
                 .setParameter(2, did)
                 .getResultList();
     }
-    
-       @GET
+
+    @GET
     @Path("notseen/{eid}/{did}")
     @Produces(MediaType.APPLICATION_JSON)
     public List<Notification> findAllByEmpNOTSeen(@PathParam(value = "eid") Integer eid, @PathParam(value = "did") Integer did) {
