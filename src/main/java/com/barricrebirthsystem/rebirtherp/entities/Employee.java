@@ -5,6 +5,7 @@
  */
 package com.barricrebirthsystem.rebirtherp.entities;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
@@ -192,6 +193,7 @@ public class Employee implements Serializable {
         this.lastname = lastname;
     }
 
+    @JsonFormat(shape=JsonFormat.Shape.STRING,pattern="yyyy-MM-dd")
     public Date getDob() {
         return dob;
     }
@@ -240,6 +242,7 @@ public class Employee implements Serializable {
         this.address = address;
     }
 
+    @JsonFormat(shape=JsonFormat.Shape.STRING,pattern="yyyy-MM-dd")
     public Date getJoinningdate() {
         return joinningdate;
     }

@@ -253,7 +253,9 @@ public class LeaveApplicationFacadeREST extends AbstractFacade<LeaveApplication>
     public List<LeaveApplication> findByDeptHead(@PathParam("id") Integer id) {
         
         
-        String sql = "SELECT  l.* from department d left join deptemployee de ON(d.id=de.DeptID)  JOIN leave_application l ON (l.emp_id=de.EmployeeID) WHERE d.department_head = " + id;
+        String sql = "SELECT  l.*, c.name, a.approval3_status  from department d left join deptemployee de ON(d.id=de.DeptID) "
+                + " JOIN leave_application l ON (l.emp_id=de.EmployeeID) join leave_approvals a on (l.id=a.leave_id)"
+                + " JOIN leave_category c ON (l.leave_cat=c.id) WHERE d.department_head = " + id+" AND a.approval3_status !='PENDING' ORDER BY l.id DESC";
         return em.createNativeQuery(sql, LeaveApplication.class).getResultList();
 
     }
@@ -262,7 +264,8 @@ public class LeaveApplicationFacadeREST extends AbstractFacade<LeaveApplication>
     @Path("manager")
     @Produces({MediaType.APPLICATION_JSON})
     public List<LeaveApplication> findByManager() {
-        String sql = "SELECT l.* FROM leave_application l join leave_approvals a on (l.id=a.leave_id) WHERE a.approval1_status='APPROVED'  AND a.approval2_status ='APPROVED'";
+        String sql = "SELECT l.*,c.name,a.approval3_status  FROM leave_application l join leave_approvals a on (l.id=a.leave_id) JOIN leave_category c "
+                + " ON (l.leave_cat=c.id) WHERE a.approval1_status='APPROVED'  AND a.approval2_status ='APPROVED' AND a.approval3_status !='PENDING' ORDER BY l.id DESC ";
         return em.createNativeQuery(sql, LeaveApplication.class).getResultList();
     }
 
@@ -270,7 +273,40 @@ public class LeaveApplicationFacadeREST extends AbstractFacade<LeaveApplication>
     @Path("hr")
     @Produces({MediaType.APPLICATION_JSON})
     public List<LeaveApplication> findByHr() {
-        String sql = "SELECT l.* FROM leave_application l join leave_approvals a on (l.id=a.leave_id) WHERE a.approval1_status='APPROVED' ";
+        String sql = "SELECT l.*, a.approval3_status, c.name FROM leave_application l join leave_approvals a on (l.id=a.leave_id) JOIN leave_category c "
+                + " ON (l.leave_cat=c.id) WHERE a.approval1_status='APPROVED' AND a.approval3_status !='PENDING'  ORDER BY l.id DESC ";
+        return em.createNativeQuery(sql, LeaveApplication.class).getResultList();
+    }
+    
+    
+       @GET
+    @Path("deptheadpending/{id}")
+    @Produces({MediaType.APPLICATION_JSON})
+    public List<LeaveApplication> findByDeptHeadPending(@PathParam("id") Integer id) {
+        
+        
+        String sql = "SELECT  l.*, c.name, a.approval3_status  from department d left join deptemployee de ON(d.id=de.DeptID) "
+                + " JOIN leave_application l ON (l.emp_id=de.EmployeeID) join leave_approvals a on (l.id=a.leave_id)"
+                + " JOIN leave_category c ON (l.leave_cat=c.id) WHERE d.department_head = " + id+" AND a.approval3_status ='PENDING' ORDER BY l.id DESC";
+        return em.createNativeQuery(sql, LeaveApplication.class).getResultList();
+
+    }
+
+    @GET
+    @Path("managerpending")
+    @Produces({MediaType.APPLICATION_JSON})
+    public List<LeaveApplication> findByManagerPending() {
+        String sql = "SELECT l.*,c.name,a.approval3_status  FROM leave_application l join leave_approvals a on (l.id=a.leave_id) JOIN leave_category c "
+                + " ON (l.leave_cat=c.id) WHERE a.approval1_status='APPROVED'  AND a.approval2_status ='APPROVED' AND a.approval3_status ='PENDING' ORDER BY l.id DESC ";
+        return em.createNativeQuery(sql, LeaveApplication.class).getResultList();
+    }
+
+    @GET
+    @Path("hrpending")
+    @Produces({MediaType.APPLICATION_JSON})
+    public List<LeaveApplication> findByHrPending() {
+        String sql = "SELECT l.*, a.approval3_status, c.name FROM leave_application l join leave_approvals a on (l.id=a.leave_id) JOIN leave_category c "
+                + " ON (l.leave_cat=c.id) WHERE a.approval1_status='APPROVED' AND a.approval3_status ='PENDING' ORDER BY l.id DESC ";
         return em.createNativeQuery(sql, LeaveApplication.class).getResultList();
     }
     

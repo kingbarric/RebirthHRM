@@ -5,6 +5,7 @@
  */
 package com.barricrebirthsystem.rebirtherp.entities;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import java.io.Serializable;
 import java.util.Date;
 import javax.persistence.Basic;
@@ -70,6 +71,18 @@ public class LeaveApplication implements Serializable {
       
       @Column(name = "duration_in_days")
     private Double durationInDays;
+      
+      private String approval3Status;
+
+    public String getApproval3Status() {
+        return approval3Status;
+    }
+
+    public void setApproval3Status(String approval3Status) {
+        this.approval3Status = approval3Status;
+    }
+      
+      
 
     public LeaveApplication() {
     }
@@ -96,6 +109,7 @@ public class LeaveApplication implements Serializable {
         this.id = id;
     }
 
+    @JsonFormat(shape=JsonFormat.Shape.STRING,pattern="yyyy-MM-dd")
     public Date getDateApplied() {
         return dateApplied;
     }
@@ -112,6 +126,7 @@ public class LeaveApplication implements Serializable {
         this.reasons = reasons;
     }
 
+    @JsonFormat(shape=JsonFormat.Shape.STRING,pattern="yyyy-MM-dd")
     public Date getStartDate() {
         return startDate;
     }
@@ -120,6 +135,7 @@ public class LeaveApplication implements Serializable {
         this.startDate = startDate;
     }
 
+    @JsonFormat(shape=JsonFormat.Shape.STRING,pattern="yyyy-MM-dd")
     public Date getEndDate() {
         return endDate;
     }
