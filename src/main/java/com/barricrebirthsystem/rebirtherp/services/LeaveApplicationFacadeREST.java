@@ -107,7 +107,7 @@ public class LeaveApplicationFacadeREST extends AbstractFacade<LeaveApplication>
         } catch (Exception e) {
             e.printStackTrace();
             m.put("code", -1);
-            m.put("message", "Error occured while creating leave, please contact Admin!!!");
+            m.put("message", "Error occured while creating leave, please contact Admin!!! "+e.getMessage()+" ERR: "+e.getLocalizedMessage());
         }
 
         return Response.ok(m).build();

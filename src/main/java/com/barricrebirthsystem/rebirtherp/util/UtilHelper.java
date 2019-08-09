@@ -35,6 +35,10 @@ public final class UtilHelper {
    private static int errorCode = 0;
    private static int successCode = 1;
    public static HashMap<String,String> msg;
+  // public static final String UPLOAD_PATH="C:/erp/fileuploads/";
+   //public static final String DOWNLOAD_PATH="http://localhost:8080/RebirthERP/fileuploads/";
+   public static final String UPLOAD_PATH="/opt/fileuploads/";
+   public static final String DOWNLOAD_PATH ="http://env-5029635.atl.jelastic.vps-host.net/fileuploads/";
     public static String getSUCCESS_MESSAGE() {
         return SUCCESS_MESSAGE;
     }
@@ -67,11 +71,16 @@ public final class UtilHelper {
    return new Messager(successCode,SUCCESS_MESSAGE);
    }
    
-   public static boolean saveFile(InputStream is, String fileLocation) {
+   public static boolean saveFile(InputStream is, String filename) {
 	      try {
-                
+                   boolean flag = false;
+         if(!new File(UPLOAD_PATH).exists()){
+      flag =   new File(UPLOAD_PATH).mkdir();
+         }else{
+         flag = true;
+         }
                
-           OutputStream os = new FileOutputStream(new File(fileLocation));
+           OutputStream os = new FileOutputStream(new File(UPLOAD_PATH+filename));
            byte[] buffer = new byte[256];
            int bytes = 0;
            while ((bytes = is.read(buffer)) != -1) {
@@ -126,6 +135,8 @@ public final class UtilHelper {
             return false;
         }
     }
+    
+    
 }
 
 

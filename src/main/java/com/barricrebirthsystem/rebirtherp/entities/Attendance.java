@@ -39,7 +39,7 @@ import javax.xml.bind.annotation.XmlRootElement;
     , @NamedQuery(name = "Attendance.findByClockIntime", query = "SELECT a FROM Attendance a WHERE a.clockIntime = :clockIntime")
     , @NamedQuery(name = "Attendance.findByClockoutTime", query = "SELECT a FROM Attendance a WHERE a.clockoutTime = :clockoutTime")
     , @NamedQuery(name = "Attendance.findByReason", query = "SELECT a FROM Attendance a WHERE a.reason = :reason")
-         , @NamedQuery(name = "Attendance.findEmpAndDate", query = "SELECT a FROM Attendance a WHERE a.attendanceDate = :attendanceDate AND a.employeeId = :empid" )
+         , @NamedQuery(name = "Attendance.findEmpAndDate", query = "SELECT a FROM Attendance a WHERE a.attendanceDate = :attendanceDate AND a.employeeId.id = :empid" )
     , @NamedQuery(name = "Attendance.findByEmployeeId", query = "SELECT a FROM Attendance a WHERE a.employeeId = :employeeId ORDER BY a.id DESC")})
 public class Attendance implements Serializable {
 

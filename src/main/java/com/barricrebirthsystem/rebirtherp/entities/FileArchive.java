@@ -79,6 +79,9 @@ public class FileArchive implements Serializable {
     @Column(name = "dateuploaded")
     @Temporal(TemporalType.TIMESTAMP)
     private Date dateuploaded;
+    
+    @Column(name="last_modified_date")
+    private Date lastModifiedDate;
 
     public FileArchive() {
     }
@@ -173,7 +176,7 @@ public class FileArchive implements Serializable {
         this.description = description;
     }
 
-      @JsonFormat(shape=JsonFormat.Shape.STRING,pattern="yyyy-MM-dd")
+  @JsonFormat(shape=JsonFormat.Shape.STRING,pattern="yyyy-MM-dd")
     public Date getDateuploaded() {
         return dateuploaded;
     }
@@ -205,6 +208,15 @@ public class FileArchive implements Serializable {
     @Override
     public String toString() {
         return "com.barricrebirthsystem.rebirtherp.entities.FileArchive[ id=" + id + " ]";
+    }
+
+    @JsonFormat(shape=JsonFormat.Shape.STRING,pattern="yyyy-MM-dd")
+    public Date getLastModifiedDate() {
+        return lastModifiedDate;
+    }
+
+    public void setLastModifiedDate(Date lastModifiedDate) {
+        this.lastModifiedDate = lastModifiedDate;
     }
     
 }

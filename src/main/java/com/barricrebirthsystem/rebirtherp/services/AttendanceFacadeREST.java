@@ -36,6 +36,9 @@ public class AttendanceFacadeREST extends AbstractFacade<Attendance> {
 
     @PersistenceContext(unitName = "com.barricrebirthsystem_RebirthERP_war_1.0-SNAPSHOTPU")
     private EntityManager em;
+    private static final String CLOCKEDIN="CLOCKEDIN";
+    private static final String CLOCKEDOUT="CLOCKEDOUT";
+    private static final String NOTCLOCKEDIN="NOTCLOCKEDIN";
 
     public AttendanceFacadeREST() {
         super(Attendance.class);
@@ -44,54 +47,74 @@ public class AttendanceFacadeREST extends AbstractFacade<Attendance> {
     @POST
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
-    public boolean clockIn(Attendance att) {
-        if (!isClockedIn()) {
+    public Response clockIn(Attendance att) {
+           Map map = new HashMap();
+        if (isClockbyEmp(att.getEmployeeId().getId()).equals(NOTCLOCKEDIN)) {
+        
             try {
-                att.setAttendanceDate(new Date());
-                att.setClockIntime(new Date());
-
-                this.create(att);
-                return true;
-                // return Response.status(Response.Status.CREATED).entity(UtilHelper.SUCCESS_MESSAGE).build();
+                
+               
+                if (isClockbyEmp(att.getEmployeeId().getId()).equals(NOTCLOCKEDIN)) {
+                    att.setAttendanceDate(new Date());
+                    att.setClockIntime(new Date());
+                    this.em.persist(att);
+                    map.put("code", 1);
+                    map.put("status", "you have signed in for the day!");
+                    return Response.ok(map).build();
+                } else {
+                    map.put("code", 2);
+                    map.put("status", "Attendance already added for this employee");
+                    return Response.ok(map).build();
+                }
             } catch (Exception e) {
-                return false;
-                // return Response.status(Response.Status.BAD_REQUEST).entity(UtilHelper.ERROR_MESSAGE).build();
+                map.put("code", 3);
+                    map.put("status", "Error occured while signing you in!");
+                    return Response.ok(map).build();
             }
-        } else {
-            return false;
+    }else{
+            System.err.println(isClockbyEmp(att.getEmployeeId().getId()));
+           map.put("code", 3);
+                    map.put("status", "Could not sign you in!");
+                    return Response.ok(map).build();
         }
+    
     }
 
     @PUT
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
-    public Boolean clockOut(Attendance entity) {
-        if (isClockedIn()) {
+    public Response clockOut(Attendance entity) {
+        Map map = new HashMap();
+        if (isClockbyEmp(entity.getEmployeeId().getId()).equals(CLOCKEDIN)) {
             try {
 
-                Attendance atten = em.createNamedQuery("Attendance.findByAttendanceDate", Attendance.class)
-                        .setParameter("attendanceDate", new Date()).getSingleResult();
+                Attendance atten = em.createNamedQuery("Attendance.findEmpAndDate", Attendance.class)
+                        .setParameter("attendanceDate", new Date())
+                        .setParameter("empid", entity.getEmployeeId().getId())
+                        .getSingleResult();
                 // att.setAttendanceDate(new Date());
                 atten.setClockoutTime(new Date());
                 atten.setReason(entity.getReason());
                 super.edit(atten);
-                return true;
-                // return Response.status(Response.Status.CREATED).entity("Success").build();
+              map.put("code", 1);
+            map.put("status", "you have signed out for the day!");
+            return Response.ok(map).build();
             } catch (Exception e) {
-                return false;
-                // return Response.status(Response.Status.BAD_REQUEST).entity("Error occured").build();
+                 map.put("code", -1);
+            map.put("status", "Error occured while signing out!");
+            return Response.ok(map).build();
             }
         }
 
-        return false;
-        // return Response.status(Response.Status.BAD_REQUEST).entity("Please clock in first").build();
+     map.put("code", -2);
+            map.put("status", "Could not sign you out, contact admin!");
+            return Response.ok(map).build();
 
     }
 
-    @GET
-    @Produces({MediaType.APPLICATION_JSON})
-    @Path("isclockedin")
-    public Boolean isClockedIn() {
+   
+    public String isClockbyEmp(Integer empid) {
+        String status = "";
         try {
             Date myDate = new Date();
             
@@ -101,29 +124,35 @@ public class AttendanceFacadeREST extends AbstractFacade<Attendance> {
             // Format the date to Strings
             String mdy = df.format(myDate);
             System.out.println(mdy);
-            Attendance atten = em.createNamedQuery("Attendance.findByAttendanceDate", Attendance.class)
-                    .setParameter("attendanceDate", myDate).getSingleResult();
-            return atten != null;
+            Attendance atten = em.createNamedQuery("Attendance.findEmpAndDate", Attendance.class)
+                    .setParameter("attendanceDate", myDate)
+                    .setParameter("empid", empid)
+                    .getSingleResult();
+            if(atten != null){
+            if(atten.getClockoutTime() ==null){
+            status = CLOCKEDIN;
+            }else{
+            status =CLOCKEDOUT;
+            }
+            }else{
+            status=NOTCLOCKEDIN;
+            }
         } catch (Exception e) {
-            return false;
+            status =NOTCLOCKEDIN;
         }
+        return status;
     }
 
     @GET
     @Produces({MediaType.APPLICATION_JSON})
-    @Path("isclockedout")
-    public Boolean isClockedOut() {
-        if (isClockedIn()) {
-            try {
-                Attendance atten = em.createNamedQuery("Attendance.findByAttendanceDate", Attendance.class)
-                        .setParameter("attendanceDate", new Date()).getSingleResult();
-                return atten.getClockoutTime() != null;
-            } catch (Exception e) {
-                return false;
-            }
-        } else {
-            return false;
-        }
+    @Path("isclocked/{empid}")
+    public Response isClocked(@PathParam("empid") Integer empid) {
+        Map m = new HashMap();
+      
+             m.put("clockStatus", isClockbyEmp(empid));
+        
+        
+        return Response.ok(m).build();
     }
 
     @DELETE
@@ -180,13 +209,12 @@ public class AttendanceFacadeREST extends AbstractFacade<Attendance> {
     @Produces({MediaType.APPLICATION_JSON})
     public Response saveAttendance(Attendance att) {
         System.out.println("Attendance: " + att);
-        List<Attendance> list = em.createNamedQuery("Attendance.findEmpAndDate").setParameter("attendanceDate", att.getAttendanceDate())
-                .setParameter("empid", att.getEmployeeId()).getResultList();
+      
         Map map = new HashMap();
-        if (list.isEmpty()) {
+        if (isClockbyEmp(att.getEmployeeId().getId()).equals(NOTCLOCKEDIN)) {
             this.em.persist(att);
             map.put("code", 1);
-            map.put("status", "Success");
+            map.put("status", "you have signed in for the day!");
             return Response.ok(map).build();
         } else {
             map.put("code", 2);

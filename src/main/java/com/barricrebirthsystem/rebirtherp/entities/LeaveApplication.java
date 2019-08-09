@@ -72,15 +72,7 @@ public class LeaveApplication implements Serializable {
       @Column(name = "duration_in_days")
     private Double durationInDays;
       
-      private String approval3Status;
-
-    public String getApproval3Status() {
-        return approval3Status;
-    }
-
-    public void setApproval3Status(String approval3Status) {
-        this.approval3Status = approval3Status;
-    }
+      
       
       
 

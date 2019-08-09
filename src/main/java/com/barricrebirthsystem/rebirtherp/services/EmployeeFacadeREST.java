@@ -5,7 +5,10 @@
  */
 package com.barricrebirthsystem.rebirtherp.services;
 
+import com.barricrebirthsystem.rebirtherp.entities.Department;
 import com.barricrebirthsystem.rebirtherp.entities.Employee;
+import com.barricrebirthsystem.rebirtherp.entities.FileArchive;
+import com.barricrebirthsystem.rebirtherp.entities.Users;
 import com.barricrebirthsystem.rebirtherp.util.EmpAccount;
 import com.barricrebirthsystem.rebirtherp.util.Messager;
 import com.barricrebirthsystem.rebirtherp.util.UtilHelper;
@@ -16,6 +19,7 @@ import java.io.InputStream;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -43,10 +47,8 @@ import org.netbeans.rest.application.config.TokenValidation;
 @Path("/employee")
 public class EmployeeFacadeREST extends AbstractFacade<Employee> {
 
-    
 //    @Context
 //    private SecurityContext secureContext;
-     
     @Context
     private static HttpServletRequest servletRequest;
     @Context
@@ -54,7 +56,6 @@ public class EmployeeFacadeREST extends AbstractFacade<Employee> {
 
     @PersistenceContext(unitName = "com.barricrebirthsystem_RebirthERP_war_1.0-SNAPSHOTPU")
     private EntityManager em;
-    
 
     public EmployeeFacadeREST() {
         super(Employee.class);
@@ -140,7 +141,7 @@ public class EmployeeFacadeREST extends AbstractFacade<Employee> {
     @Consumes({MediaType.APPLICATION_JSON})
     public Response editAccount(EmpAccount emp) {
 
-        System.err.println("ERRRRRR "+emp);
+        System.err.println("ERRRRRR " + emp);
         try {
             Employee entity = super.find(emp.getId());
             entity.setAccountNo(emp.getAccountNo());
@@ -166,54 +167,39 @@ public class EmployeeFacadeREST extends AbstractFacade<Employee> {
             @FormDataParam("upload") FormDataContentDisposition formData,
             @FormDataParam("data") String data) {
         System.err.println("DATA: " + data);
- HashMap m = new HashMap();
-  m.put("status", "Unsuccessful");
-        servletContext = servletRequest.getServletContext();
-        String contextPath = servletContext.getRealPath(File.separator);
+        HashMap m = new HashMap();
+        m.put("status", "Unsuccessful");
         String fileName = Calendar.getInstance().getTimeInMillis() + formData.getFileName();
 
-        String location = contextPath + "uploads\\" + fileName;
-        boolean flag;
-        if (!new File(contextPath + "uploads").exists()) {
-            flag = new File(contextPath + "uploads").mkdir();
-        } else {
-            flag = true;
-        }
-
-        if (flag) {
-            if (UtilHelper.saveFile(is, location)) {
+            if (UtilHelper.saveFile(is, fileName)) {
 
                 try {
 
                     Employee e = em.find(Employee.class, Integer.parseInt(data));
-                    String oldImg = contextPath + "uploads\\" + e.getImagename();
-                    
-                    
+                    String oldImg = UtilHelper.UPLOAD_PATH + e.getImagename();
+
                     e.setImagename(fileName);
                     super.edit(e);
                     // super.create(f);
                     //Delete old image
                     File olF = new File(oldImg);
-                    if(olF.exists()){
-                      new File(oldImg).delete();  
+                    if (olF.exists()) {
+                        new File(oldImg).delete();
                     }
-                    
-                    
-            m.put("status", "Successful");
+
+                    m.put("status", "Successful");
                     return Response.status(Response.Status.OK).entity(m).build();
                 } catch (Exception exp) {
-                    System.err.println("Err"+exp);
-                   
+                    System.err.println("Err" + exp);
+
                     return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(m).build();
                 }
 
             } else {
-              
+
                 return Response.status(Response.Status.BAD_REQUEST).entity(m).build();
             }
-        } else {
-            return Response.status(Response.Status.BAD_REQUEST).entity(m).build();
-        }
+        
 
     }
 
@@ -223,20 +209,17 @@ public class EmployeeFacadeREST extends AbstractFacade<Employee> {
     public Response getImage64(@PathParam("empid") Integer empid) {
 
         try {
-            
-   //  JwtClaims jwt =       jwtClaims.getClaimValue("", String.class);
+
+            //  JwtClaims jwt =       jwtClaims.getClaimValue("", String.class);
 //           String token = headers.getRequestHeader("Authorization").get(0);
 //           System.out.println("token: "+token);
-
 // String username = secureContext.getUserPrincipal().getName();
 //            System.err.println("USERNAME: "+username);
 // int empid = 1;
             
-            ServletContext servletContext = servletRequest.getServletContext();
-            String contextPath = servletContext.getRealPath(File.separator);
 
             Employee e = super.find(empid);
-            String fileLocation = contextPath + "uploads\\" + e.getImagename();
+            String fileLocation = UtilHelper.UPLOAD_PATH+ e.getImagename();
             HashMap m = new HashMap();
             String base64 = UtilHelper.base64Encoder(fileLocation);
             m.put("imager", base64);
@@ -247,6 +230,23 @@ public class EmployeeFacadeREST extends AbstractFacade<Employee> {
             return Response.status(Response.Status.CREATED).entity(null).build();
         }
 
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("stats")
+    public Response dashboardStat() {
+        Map m = new HashMap();
+        int employeeCount = em.createNamedQuery("Employee.findAll", Employee.class).getResultList().size();
+        int deptCount = em.createNamedQuery("Department.findAll", Department.class).getResultList().size();
+        int userCount = em.createNamedQuery("Users.findAll", Users.class).getResultList().size();
+        int fileCount = em.createNamedQuery("FileArchive.findAll", FileArchive.class).getResultList().size();
+
+        m.put("empCount", employeeCount);
+        m.put("deptCount", deptCount);
+        m.put("userCount", userCount);
+        m.put("fileCount", fileCount);
+        return Response.ok(m).build();
     }
 
 }
